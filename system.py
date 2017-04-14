@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import sys
 import os
 import re
@@ -71,33 +73,42 @@ def train_system(tweets, age, uniword, biword):
 
 	return
 
+def fetchSyllables(word):
+    syll = 1.666666666	#average syll/word in Eng lang.
+
+    request = Request("https://api.datamuse.com/words?sp=" + word + "&md=s")
+    try:
+        response = urlopen(request)
+        results = response.read()
+        dict_format = json.loads(results)
+        if len(dict_format) > 0:
+            syll = dict_format[0]["numSyllables"]
+    except:
+        print "exception: " + word
+
+    return syll
+
 def train_system_syllables(tweets):
+    syll_count = 0.0
+    word_count = 0.0
 
-	syll_count = 0.0
-	word_count = 0.0
+    # dictionary to remember syllables
+    # syllables[word] => num syllables in word
+    syllables = {}
 
-	for tweet in tweets:
+    for tweet in tweets:
+        for word in tweet.split():
+            if word not in syllables:
+                syll = fetchSyllables(word)
+            else:
+                syll = syllables[word]
 
-		for word in tweet.split():
-			request = Request("https://api.datamuse.com/words?sp=" + word + "&md=s")
+            syllables[word] = syll
 
-			try:
-				response = urlopen(request)
-				results = response.read()
-				dict_format = json.loads(results)
-				if len(dict_format) > 0:
-					syll = dict_format[0]["numSyllables"]
-				else:
-					syll = 1.666666666	#average syll/word in Eng lang.
-			except:
-				print word
-				print "fuck"
-				syll = 1.666666666
+            word_count += 1.0
+            syll_count += syll
 
-			word_count += 1.0
-			syll_count += syll
-
-	return syll_count/word_count
+    return syll_count/word_count
 
 def load_dictionaries_from_files():
 	with open("saved_dictionaries/uniword") as file:
@@ -131,23 +142,52 @@ def demo(username, uniword, biword, syllab_avg):
 
 def estimate_age(tweets, uniword, biword, syllab_avg):
 
-	probabilities = {}
-	prev_word = ""
+    probabilities = {}
+    prev_word = ""
 
-	for word in tweets:
-		for age in uniword:
-			if prev_word != "":
-				if age in probabilities:
-					probabilities[age] += log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / (uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1))))
-				else:
-					probabilities[age] = log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / (uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1))))
-		prev_word = word
+    print
 
-	print probabilities
-	print max(probabilities) 
+    print uniword
+    print biword
+    print syllab_avg
+
+    for word in tweets:
+        for age in uniword:
+            if prev_word != "":
+                if age in probabilities:
+                    probabilities[age] += log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / (uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1))))
+                else:
+                    probabilities[age] = log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / (uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1))))
+            prev_word = word
+
+    print probabilities
+    print max(probabilities)
+
+    return max(probabilities)
 
 
-# def test_system(tweet, uniword, biword, syllab_avg):
+def test_system(test_data, uniword, biword, syllab_avg):
+    total = 0.0
+    correct = 0.0
+    within_one = 0.0
+
+    for age in test_data.keys():
+        for handle in test_data[age].keys():
+            print test_data[age][handle]
+            predicted_age = estimate_age(test_data[age][handle], uniword, biword, syllab_avg)
+
+            total += 1
+            if predicted_age == age:
+                correct += 1
+            elif predicted_age == (age - 5) or predicted_age == (age + 5):
+                within_one += 1
+
+    accuracy = correct / total
+    accuracy_within_one = (correct + within_one) / total
+
+    print accuracy
+    print accuracy_within_one
+
 # 	vocabs = list()
 # 	for i in range(0, len(lang_list)):
 # 		count = len(unigrams[i].keys())
@@ -220,9 +260,17 @@ if __name__ == '__main__':
 	# 	dumped = json.dumps(syllab_avg)
 	# 	output.write(dumped)
 
+    uniword, biword, syllab_avg = load_dictionaries_from_files()
 
-	uniword, biword, syllab_avg = load_dictionaries_from_files()
-	while 1:
-		username = raw_input("What's your twitter handle?\n")
-		demo(username, uniword, biword, syllab_avg)
+    ages = {
+        20: {
+            "@covcarson": ["This still happens? 😮", "Calls matter 👏🏼", "This weather is giving me life 🌻👌🏼", "Cutest pupper of all time. #NationalPuppyDay", "Pushing a garbage health care policy through just to say they did is not a victory.", "Apple releasing iOS update with Find My AirPods *and* theater mode for the Apple Watch."]
+        }
+    }
 
+    test_system(ages, uniword, biword, syllab_avg)
+
+    #
+	# while 1:
+	# 	username = raw_input("What's your twitter handle?\n")
+	# 	demo(username, uniword, biword, syllab_avg)
