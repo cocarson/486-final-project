@@ -13,6 +13,7 @@ from urllib2 import Request, urlopen, URLError
 from TwitterAPI import TwitterAPI
 import json
 from textstat.textstat import textstat
+import operator
 
 api = TwitterAPI('6hckfkSBDEUJRxPATcCtcsdOp',
             		'GduOLco0wL1pOTboeClVPmZe8PPXEYD0VKnmKWpb2of7UNTbrY',
@@ -149,7 +150,7 @@ def demo(username, uniword, biword, syllab_avg):
 
 
 def estimate_age(tweets, uniword, biword, syllab_avg):
-    print tweets
+    # print tweets
 
     probabilities = {}
     prev_word = ""
@@ -168,10 +169,19 @@ def estimate_age(tweets, uniword, biword, syllab_avg):
                             probabilities[age] = log10(count / 100) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))
             prev_word = word
 
-    sorted_probs = sorted(probabilities.items(), key=operator.itemgetter(1), reverse=True)
-    print sorted_probs[0][0]
+    probs_sorted = sorted(probabilities.items(), key=operator.itemgetter(1), reverse = True)
+    count = 1
+    print "Your predicted age based on your tweets is:"
 
-    return sorted_probs[0][0]
+    for age_prob in probs_sorted:
+        if count > 3:
+            break
+        age = int(age_prob[0])
+        max_age = age + 4
+        print str(count) + ") " + str(age) + " - " + str(max_age)
+        count += 1
+
+    return probs_sorted[0][0]
 
 
 def test_system(test_data, uniword, biword, syllab_avg):
