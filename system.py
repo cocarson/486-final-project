@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import ast
 import os
 import re
 from math import log10
@@ -9,6 +10,7 @@ from itertools import izip
 from urllib2 import Request, urlopen, URLError
 from TwitterAPI import TwitterAPI
 import json
+from textstat.textstat import textstat
 
 api = TwitterAPI('6hckfkSBDEUJRxPATcCtcsdOp',
             		'GduOLco0wL1pOTboeClVPmZe8PPXEYD0VKnmKWpb2of7UNTbrY',
@@ -58,33 +60,38 @@ def normalize_age(age):
 #input: biword dict
 def train_system(tweets, age, uniword, biword):
 
-	#cycle through tweets and add to uniword and biword dictionaries
-	for tweet in tweets:
-		prev_word = ""
-		for word in tweet.split():
-			both_words = prev_word + " " + word
-			uniword[age][word] = uniword[age].get(word, 0) + 1
+    #cycle through tweets and add to uniword and biword dictionaries
+    for tweet in tweets:
+        prev_word = ""
+        for word in tweet.split():
+            both_words = str(prev_word + " " + word)
+            uniword[age][word] = uniword[age].get(word, 0) + 1
 
-			if prev_word != "":
-				biword[age][both_words] = biword[age].get(both_words, 0) + 1
-			prev_word = word
+            if prev_word != "":
+                biword[age][both_words] = biword[age].get(both_words, 0) + 1
+            prev_word = word
 
-		biword[age][word + "\n"] = biword[age].get(word + "\n", 0) + 1
+        biword[age][word + "\n"] = biword[age].get(word + "\n", 0) + 1
 
-	return
+    return
 
 def fetchSyllables(word):
     syll = 1.666666666	#average syll/word in Eng lang.
 
-    request = Request("https://api.datamuse.com/words?sp=" + word + "&md=s")
-    try:
-        response = urlopen(request)
-        results = response.read()
-        dict_format = json.loads(results)
-        if len(dict_format) > 0:
-            syll = dict_format[0]["numSyllables"]
-    except:
-        print "exception: " + word
+    syll = textstat.syllable_count(word)
+    print "syllables: " + str(syll)
+
+    # request = Request("https://api.datamuse.com/words?sp=" + word + "&md=s")
+    # try:
+    #     response = urlopen(request)
+    #     results = response.read()
+    #     dict_format = json.loads(results)
+    #     if len(dict_format) > 0:
+    #         syll = dict_format[0]["numSyllables"]
+    #     print "success"
+    #
+    # except:
+    #     print "exception: " + word
 
     return syll
 
@@ -121,13 +128,13 @@ def load_dictionaries_from_files():
 		data = file.read()
 	syllab_avg = json.loads(data)
 
-	return biword, uniword, syllab_avg
+	return uniword, biword, syllab_avg
 
 def demo(username, uniword, biword, syllab_avg):
 	tweets = []
 
 	try:
-		results = api.request('statuses/user_timeline', {'screen_name': username, 'count': 40, 'include_rts': False})
+		results = api.request('statuses/user_timeline', {'screen_name': username, 'count': 200, 'include_rts': False})
 		for item in results:
 			tweets.append(item['text'])
 	except:
@@ -145,23 +152,35 @@ def estimate_age(tweets, uniword, biword, syllab_avg):
     probabilities = {}
     prev_word = ""
 
-    print
+    # print
+    #
+    # print uniword
+    # print biword
+    # print syllab_avg
 
-    print uniword
-    print biword
-    print syllab_avg
+    for age in uniword:
+        # print type(age)
+        # print biword[age]
+        print str(age) + " : " + str(biword[age].get("I love", 0))
 
-    for word in tweets:
-        for age in uniword:
-            if prev_word != "":
-                if age in probabilities:
-                    probabilities[age] += log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / (uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1))))
-                else:
-                    probabilities[age] = log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / (uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1))))
+    for tweet in tweets:
+        for word in tweet.split(" "):
+            for age in uniword:
+                if prev_word != "":
+                    if age in probabilities:
+                        count = float(biword[age].get(prev_word + " " + word, 0))
+                        if count > 0:
+                            print str(age) + " : " + str(biword[age].get(prev_word + " " + word, 0)) + " : " + str(log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / 1000))) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))))
+                            probabilities[age] += log10(count / 100) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))
+                    else:
+                        count = float(biword[age].get(prev_word + " " + word, 0))
+                        if count > 0:
+                            print str(age) + " : " + str(biword[age].get(prev_word + " " + word, 0)) + " : " + str(log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / 1000))) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))))
+                            probabilities[age] = log10(count / 100) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))
             prev_word = word
 
     print probabilities
-    print max(probabilities)
+    # print max(probabilities)
 
     return max(probabilities)
 
@@ -230,26 +249,30 @@ def test_system(test_data, uniword, biword, syllab_avg):
 if __name__ == '__main__':
 
 	# #initialize dictionaries with empty dictionaries for each age range
-	# uniword, biword, syllab_avg = create_dictionaries()
+    uniword, biword, syllab_avg = create_dictionaries()
 
-	# #loop through tweets in and train system on each tweet
+	#loop through tweets in and train system on each tweet
 	# for file in os.listdir("tweets/"):
 	# 	file = "tweets/" + file
-	# 	with open(file) as file:
-	# 		tweets = []
-	# 		age = 0
-	# 		first_line = True
-	# 		for line in file:
-	# 			if first_line:
-	# 				age = normalize_age(int(line))
-	# 				first_line = False
-	# 			else:
-	# 				tweets.append(line)
+    # obj = {}
+    # with open("age_to_tweets") as file:
+    #     for line in file.readlines():
+    #         obj = ast.literal_eval(line)
+		# tweets = []
+		# age = 0
+		# first_line = True
+		# for line in file:
+		# 	if first_line:
+		# 		age = normalize_age(int(line))
+		# 		first_line = False
+		# 	else:
+		# 		tweets.append(line)
 
-	# 	#train system -> loop over age-tweets dict and train sys
-	# 	train_system(tweets, age, uniword, biword)
-	# 	syllab_avg[age] = train_system_syllables(tweets)
-
+	# train system -> loop over age-tweets dict and train sys
+    # for age, tweets in obj.items():
+    #     train_system(tweets, int(age), uniword, biword)
+    # 	syllab_avg[age] = train_system_syllables(tweets)
+    #
 	# with codecs.open('saved_dictionaries/uniword', 'w') as output:
 	# 	dumped = json.dumps(uniword)
 	# 	output.write(dumped)
@@ -262,15 +285,14 @@ if __name__ == '__main__':
 
     uniword, biword, syllab_avg = load_dictionaries_from_files()
 
-    ages = {
-        20: {
-            "@covcarson": ["This still happens? 😮", "Calls matter 👏🏼", "This weather is giving me life 🌻👌🏼", "Cutest pupper of all time. #NationalPuppyDay", "Pushing a garbage health care policy through just to say they did is not a victory.", "Apple releasing iOS update with Find My AirPods *and* theater mode for the Apple Watch."]
-        }
-    }
-
-    test_system(ages, uniword, biword, syllab_avg)
-
+    # ages = {
+    #     20: {
+    #         "@covcarson": ["This still happens? 😮", "Calls matter 👏🏼", "This weather is giving me life 🌻👌🏼", "Cutest pupper of all time. #NationalPuppyDay", "Pushing a garbage health care policy through just to say they did is not a victory.", "Apple releasing iOS update with Find My AirPods *and* theater mode for the Apple Watch."]
+    #     }
+    # }
     #
-	# while 1:
-	# 	username = raw_input("What's your twitter handle?\n")
-	# 	demo(username, uniword, biword, syllab_avg)
+    # test_system(ages, uniword, biword, syllab_avg)
+
+    while 1:
+        username = raw_input("What's your twitter handle?\n")
+        demo(username, uniword, biword, syllab_avg)
