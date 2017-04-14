@@ -11,6 +11,7 @@ from urllib2 import Request, urlopen, URLError
 from TwitterAPI import TwitterAPI
 import json
 from textstat.textstat import textstat
+import operator
 
 api = TwitterAPI('6hckfkSBDEUJRxPATcCtcsdOp',
             		'GduOLco0wL1pOTboeClVPmZe8PPXEYD0VKnmKWpb2of7UNTbrY',
@@ -141,7 +142,6 @@ def demo(username, uniword, biword, syllab_avg):
 		print "You either typed in your username wrong or you don't have a twitter\n"
 		return
 
-	print tweets
 	if len(tweets) < 1:
 		return
 	estimate_age(tweets, uniword, biword, syllab_avg)
@@ -158,10 +158,10 @@ def estimate_age(tweets, uniword, biword, syllab_avg):
     # print biword
     # print syllab_avg
 
-    for age in uniword:
-        # print type(age)
-        # print biword[age]
-        print str(age) + " : " + str(biword[age].get("I love", 0))
+    # for age in uniword:
+    #     # print type(age)
+    #     # print biword[age]
+    #     print str(age) + " : " + str(biword[age].get("I love", 0))
 
     for tweet in tweets:
         for word in tweet.split(" "):
@@ -170,19 +170,30 @@ def estimate_age(tweets, uniword, biword, syllab_avg):
                     if age in probabilities:
                         count = float(biword[age].get(prev_word + " " + word, 0))
                         if count > 0:
-                            print str(age) + " : " + str(biword[age].get(prev_word + " " + word, 0)) + " : " + str(log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / 1000))) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))))
+                            # print str(age) + " : " + str(biword[age].get(prev_word + " " + word, 0)) + " : " + str(log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / 1000))) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))))
                             probabilities[age] += log10(count / 100) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))
                     else:
                         count = float(biword[age].get(prev_word + " " + word, 0))
                         if count > 0:
-                            print str(age) + " : " + str(biword[age].get(prev_word + " " + word, 0)) + " : " + str(log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / 1000))) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))))
+                            # print str(age) + " : " + str(biword[age].get(prev_word + " " + word, 0)) + " : " + str(log10((float(biword[age].get(prev_word + " " + word, 0) + 1) / 1000))) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))))
                             probabilities[age] = log10(count / 100) #(uniword[age].get(prev_word, 0) + max(len(uniword[age]), 1)))
             prev_word = word
 
-    print probabilities
+    # print probabilities
     # print max(probabilities)
+    # return max(probabilities)
 
-    return max(probabilities)
+    probs_sorted = sorted(probabilities.items(), key=operator.itemgetter(1), reverse = True)
+    count = 1
+    print "Your predicted age based on your tweets is:"
+
+    for age_prob in probs_sorted:
+        if count > 3:
+            break
+        age = int(age_prob[0])
+        max_age = age + 4
+        print str(count) + ") " + str(age) + " - " + str(max_age)
+        count += 1
 
 
 def test_system(test_data, uniword, biword, syllab_avg):
@@ -192,20 +203,22 @@ def test_system(test_data, uniword, biword, syllab_avg):
 
     for age in test_data.keys():
         for handle in test_data[age].keys():
-            print test_data[age][handle]
-            predicted_age = estimate_age(test_data[age][handle], uniword, biword, syllab_avg)
+            #print test_data[age][handle]
+            estimate_age(test_data[age][handle], uniword, biword, syllab_avg)
 
-            total += 1
-            if predicted_age == age:
-                correct += 1
-            elif predicted_age == (age - 5) or predicted_age == (age + 5):
-                within_one += 1
+            # predicted_age = estimate_age(test_data[age][handle], uniword, biword, syllab_avg)
 
-    accuracy = correct / total
-    accuracy_within_one = (correct + within_one) / total
+    #         total += 1
+    #         if predicted_age == age:
+    #             correct += 1
+    #         elif predicted_age == (age - 5) or predicted_age == (age + 5):
+    #             within_one += 1
 
-    print accuracy
-    print accuracy_within_one
+    # accuracy = correct / total
+    # accuracy_within_one = (correct + within_one) / total
+
+    # print accuracy
+    # print accuracy_within_one
 
 # 	vocabs = list()
 # 	for i in range(0, len(lang_list)):
