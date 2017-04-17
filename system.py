@@ -15,6 +15,8 @@ import json
 from textstat.textstat import textstat
 import operator
 
+from get_tweets import process_tweet
+
 api = TwitterAPI('6hckfkSBDEUJRxPATcCtcsdOp',
 					'GduOLco0wL1pOTboeClVPmZe8PPXEYD0VKnmKWpb2of7UNTbrY',
 					'399687253-xb9c6wdOQMBU8K2Jk3utxDLuqC21qRLTajkV9iel',
@@ -150,13 +152,13 @@ def demo(username, uniword, biword, syllab_avg):
 
 
 def estimate_age(tweets, uniword, biword, syllab_avg):
-	# print tweets
 
-	probabilities = {}
-	prev_word = ""
+    probabilities = {}
+    prev_word = ""
 
-	for tweet in tweets:
-		for word in tweet.split(" "):
+    for tweet in tweets:
+        tweet = process_tweet(tweet)
+        for word in tweet.split(" "):
 			for age in uniword:
 				if prev_word != "":
 					if age in probabilities:
@@ -253,12 +255,10 @@ def test_syllables(test_data, syllab_avg):
 
 def read_and_train(uniword, biword, syllab_avg):
 	# loop through tweets in and train system on each tweet
-	for file in os.listdir("tweets/"):
-		file = "tweets/" + file
-		obj = {}
-		with open("age_to_tweets") as file:
-			for line in file.readlines():
-				obj = ast.literal_eval(line)
+	obj = {}
+	with open("age_to_tweets") as file:
+		for line in file.readlines():
+			obj = ast.literal_eval(line)
 
 
 	# train system -> loop over age-tweets dict and train sys
@@ -289,7 +289,7 @@ if __name__ == '__main__':
 
 	# only needed to fill the file - comment out otherwise
 	# print "training..."
-	read_and_train(uniword, biword, syllab_avg)
+	# read_and_train(uniword, biword, syllab_avg)
 
 	# uniword, biword, syllab_avg = load_dictionaries_from_files()
 
@@ -301,28 +301,6 @@ if __name__ == '__main__':
 		# #this test tests using biword and uniword model
 		test_system(ages, uniword, biword, syllab_avg)
 		#this test tests using syllables
-
-		# for age in ages:
-		# 	print age + "\n"
-		# 	print ages[age]
-		# 	print "\n"
-
-
-
 		test_syllables(ages, syllab_avg)
-
 	else:
 		run_system(uniword, biword, syllab_avg)
-
-
-
-# old code
-		# tweets = []
-		# age = 0
-		# first_line = True
-		# for line in file:
-		#   if first_line:
-		#       age = normalize_age(int(line))
-		#       first_line = False
-		#   else:
-		#       tweets.append(line)

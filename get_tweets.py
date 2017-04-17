@@ -135,14 +135,15 @@ def process_tweet(tweet):
 	return tweet
 
 def preprocess_train(data):
-	processed_tweets = []
 	# data is indexed data[age] => list(tweets)
 	for age, tweets in data.items(): 
+		processed_tweets = []
 		for tweet in tweets:
 			tweet = process_tweet(tweet)
 			processed_tweets.append(tweet)
 
 		data[age] = processed_tweets
+
 
 def preprocess_test(data):
 	# data is indexed data[age][username] => list(tweets)
@@ -155,8 +156,7 @@ def preprocess_test(data):
 
 			data[age][username] = processed_tweets
 
-def main():
-
+if __name__ == '__main__':
 	names_15 = ["Max Charles", "Zachary Gordon", "Mason Cook", "Nolan Gould", "Millie Bobby Brown", 
 	"Caleb McLaughlin", "Gaten Matarazzo", "Noah Schnapp", "Maisie Williams", "Nolan Gould"]
 	names_20 = ["Miley Cyrus", "Hailee Steinfeld", "Isabelle Fuhrman", "Kendall Jenner", "Sophie Turner",
@@ -222,6 +222,10 @@ def main():
 					age_to_tweet_dict[norm_actor_age] = tweets
 		counter = counter + 1
 
+	with codecs.open('testing_garbage', 'w') as output:
+		dumped = json.dumps(age_to_tweet_dict)
+		output.write(dumped)
+
 	preprocess_train(age_to_tweet_dict)
 	preprocess_test(testing_data)
 
@@ -234,6 +238,3 @@ def main():
 	with codecs.open('test_data', 'w') as output:
 		dumped = json.dumps(testing_data)
 		output.write(dumped)
-
-
-main()
