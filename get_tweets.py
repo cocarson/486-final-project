@@ -113,10 +113,47 @@ def get_tweets(username, tweets):
 		for item in results:
 			tweets.append(item['text'])
 	except:
-		#print "get_tweets error"
+		print "get_tweets error"
 		return False
 
 	return True
+
+def process_tweet(tweet):
+	words = tweet.split()
+	for i, word in enumerate(words):
+		# convert all mentions to @ symbol
+		if "@" in word:
+			words[i] = "@"
+		# convert all hashtags to # symbol
+		elif "#" in word: 
+			words[i] = "#"
+		# convert external links to the string "http"
+		elif "http" in word: 
+			words[i] = "http"
+
+	tweet = " ".join(words)
+	return tweet
+
+def preprocess_train(data):
+	processed_tweets = []
+	# data is indexed data[age] => list(tweets)
+	for age, tweets in data.items(): 
+		for tweet in tweets:
+			tweet = process_tweet(tweet)
+			processed_tweets.append(tweet)
+
+		data[age] = processed_tweets
+
+def preprocess_test(data):
+	# data is indexed data[age][username] => list(tweets)
+	for age, usernames in data.items(): 
+		for username, tweets in usernames.items():
+			processed_tweets = []
+			for tweet in tweets:
+				tweet = process_tweet(tweet)
+				processed_tweets.append(tweet)
+
+			data[age][username] = processed_tweets
 
 def main():
 
@@ -157,10 +194,6 @@ def main():
 
 	counter = 0
 	for name, username in zip(usernames[1], usernames[0]):
-		# print name
-		# if counter == 500:
-		# 	print name
-
 		actor_age = get_actor_age(name)
 
 		if actor_age == -1:
@@ -175,6 +208,7 @@ def main():
 
 		tweets = []
 		if get_tweets(username, tweets):
+			# place one out of every four users in testing set
 			if (counter % 4) == 0:
 				if norm_actor_age in testing_data:
 					testing_data[norm_actor_age][name] = tweets
@@ -188,6 +222,8 @@ def main():
 					age_to_tweet_dict[norm_actor_age] = tweets
 		counter = counter + 1
 
+	preprocess_train(age_to_tweet_dict)
+	preprocess_test(testing_data)
 
 	#Training Data
 	with codecs.open('age_to_tweets', 'w') as output:
