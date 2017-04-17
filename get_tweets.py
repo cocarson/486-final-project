@@ -11,10 +11,6 @@ api = TwitterAPI('6hckfkSBDEUJRxPATcCtcsdOp',
                     '399687253-xb9c6wdOQMBU8K2Jk3utxDLuqC21qRLTajkV9iel',
                     'bXdT9ejraFk6O9bNExA2sD71jgixMFby8nqzQwfsTLXKa')
 
-#Age range -> list of tweets
-age_to_tweet_dict = {}
-testing_data = {}
-
 def calculate_age(born):
 	today = date.today()
 	return today.year - int(born[0]) - ((today.month, today.day) < (int(born[1]), int(born[2])))
@@ -113,7 +109,7 @@ def get_usernames(names):
 
 def get_tweets(username, tweets):
 	try:
-		results = api.request('statuses/user_timeline', {'screen_name': username, 'count': 25, 'include_rts': False})
+		results = api.request('statuses/user_timeline', {'screen_name': username, 'count': 80, 'include_rts': False})
 		for item in results:
 			tweets.append(item['text'])
 	except:
@@ -150,15 +146,20 @@ def main():
 
 	names = names_15 + names_20 + names_25 + names_30 + names_35 + names_40 + names_45 + names_50 + names_55 + names_60 + names_65
 
+
+	#Age range -> list of tweets
+	age_to_tweet_dict = {}
+	testing_data = {}
+
 	#names = get_actor_names("aka-names.list")
 	tweets = []
 	usernames = get_usernames(names)
 
 	counter = 0
 	for name, username in zip(usernames[1], usernames[0]):
-		print name
-		if counter == 500:
-			print name
+		# print name
+		# if counter == 500:
+		# 	print name
 
 		actor_age = get_actor_age(name)
 
@@ -172,6 +173,7 @@ def main():
 
 		norm_actor_age = normalize_age(actor_age)
 
+		tweets = []
 		if get_tweets(username, tweets):
 			if (counter % 4) == 0:
 				if norm_actor_age in testing_data:
