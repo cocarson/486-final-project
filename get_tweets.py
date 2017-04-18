@@ -109,7 +109,7 @@ def get_usernames(names):
 
 def get_tweets(username, tweets):
 	try:
-		results = api.request('statuses/user_timeline', {'screen_name': username, 'count': 80, 'include_rts': False})
+		results = api.request('statuses/user_timeline', {'screen_name': username, 'count': 300, 'include_rts': False})
 		for item in results:
 			tweets.append(item['text'])
 	except:
@@ -121,15 +121,18 @@ def get_tweets(username, tweets):
 def process_tweet(tweet):
 	words = tweet.split()
 	for i, word in enumerate(words):
+		word = word.lower()
 		# convert all mentions to @ symbol
-		if "@" in word:
-			words[i] = "@"
+		if "@" == word[0]:
+			word = "@"
 		# convert all hashtags to # symbol
-		elif "#" in word: 
-			words[i] = "#"
+		elif "#" == word[0]: 
+			word = "#"
 		# convert external links to the string "http"
 		elif "http" in word: 
-			words[i] = "http"
+			word = "http"
+
+		words[i] = word
 
 	tweet = " ".join(words)
 	return tweet
@@ -211,10 +214,10 @@ if __name__ == '__main__':
 			# place one out of every four users in testing set
 			if (counter % 4) == 0:
 				if norm_actor_age in testing_data:
-					testing_data[norm_actor_age][name] = tweets
+					testing_data[norm_actor_age][name] = tweets[:159]
 				else:
 					testing_data[norm_actor_age] = dict()
-					testing_data[norm_actor_age][name] = tweets
+					testing_data[norm_actor_age][name] = tweets[:159]
 			else:
 				if norm_actor_age in age_to_tweet_dict:
 					age_to_tweet_dict[norm_actor_age] = age_to_tweet_dict[norm_actor_age] + tweets

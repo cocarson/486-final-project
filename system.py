@@ -76,27 +76,11 @@ def train_system(tweets, age, uniword, biword):
 				biword[age][both_words] = biword[age].get(both_words, 0) + 1
 			prev_word = word
 
-		biword[age][word + "\n"] = biword[age].get(word + "\n", 0) + 1
-
 	return
 
 def fetchSyllables(word):
 	syll = 1.666666666	#average syll/word in Eng lang.
-
 	syll = textstat.syllable_count(word)
-
-	# request = Request("https://api.datamuse.com/words?sp=" + word + "&md=s")
-	# try:
-	#     response = urlopen(request)
-	#     results = response.read()
-	#     dict_format = json.loads(results)
-	#     if len(dict_format) > 0:
-	#         syll = dict_format[0]["numSyllables"]
-	#     print "success"
-	#
-	# except:
-	#     print "exception: " + word
-
 	return syll
 
 def train_system_syllables(tweets):
@@ -109,7 +93,9 @@ def train_system_syllables(tweets):
 	for tweet in tweets:
 		syll = 1.666666
 		for word in tweet.split():
-			if word not in syllables:
+			if "\\" in word:
+				continue
+			elif word not in syllables:
 				syll = fetchSyllables(word)
 			else:
 				syll = syllables[word]
@@ -152,40 +138,39 @@ def demo(username, uniword, biword, syllab_avg):
 
 
 def estimate_age(tweets, uniword, biword, syllab_avg):
+	probabilities = {}
+	for tweet in tweets:
+		prev_word = ""
+		tweet = process_tweet(tweet)
+		words = tweet.split(" ")
 
-    probabilities = {}
-    prev_word = ""
-
-    for tweet in tweets:
-        tweet = process_tweet(tweet)
-        for word in tweet.split(" "):
+		for word in words:
 			for age in uniword:
 				if prev_word != "":
 					if age in probabilities:
 						count = float(biword[age].get(prev_word + " " + word, 0))
 						uni_count = float(uniword[age].get(prev_word, 0))
-						# if count > 0:
 						probabilities[age] += log10((count + 1) / (uni_count + 100))
 					else:
 						count = float(biword[age].get(prev_word + " " + word, 0))
 						uni_count = float(uniword[age].get(prev_word, 0))
-						# if count > 0:
 						probabilities[age] = log10((count + 1) / (uni_count + 100))
 			prev_word = word
 
-	# print probabilities
 	probs_sorted = sorted(probabilities.items(), key=operator.itemgetter(1), reverse = True)
 	count = 1
-	print "Your predicted age based on your tweets is:"
+	# print "Your predicted age based on your tweets is:"
 
-	for age_prob in probs_sorted:
-		if count > 3:
-			break
-		age = int(age_prob[0])
-		max_age = age + 4
-		print str(count) + ") " + str(age) + " - " + str(max_age)
-		count += 1
+	# for age_prob in probs_sorted:
+	# 	if count > 3:
+	# 		break
+	# 	age = int(age_prob[0])
+	# 	max_age = age + 4
+	# 	print str(count) + ") " + str(age) + " - " + str(max_age)
+	# 	count += 1
 
+	# print probabilities
+	# print probs_sorted
 	return probs_sorted[0][0]
 
 
@@ -205,7 +190,7 @@ def test_system(test_data, uniword, biword, syllab_avg):
 			elif predicted_age == (int(age) - 5) or predicted_age == (int(age) + 5):
 				within_one += 1
 
-			print "(" + str(int(correct)) + "/" + str(int(total)) + ")"
+			# print "(" + str(int(correct)) + "/" + str(int(total)) + ")"
 
 	accuracy = correct / total
 	accuracy_within_one = (correct + within_one) / total
@@ -218,19 +203,15 @@ def test_syllables(test_data, syllab_avg):
 	correct = 0.0
 	within_one = 0.0
 
-	# for age in test_data.keys():
-	# 	print age
-
 	for age in test_data.keys():
 		for handle in test_data[age].keys():
 
-			#average syllable count for this test subject's tweets
+			# average syllable count for this test subject's tweets
 			syll = train_system_syllables(test_data[age][handle])
 			total += 1
 
 			predicted_age = -1.0
 			min_diff = 1000.0
-
 
 			for age_avg in syllab_avg:
 				if abs(syll - syllab_avg[age_avg]) < min_diff:
@@ -238,13 +219,13 @@ def test_syllables(test_data, syllab_avg):
 					min_diff = abs(syll - syllab_avg[age_avg])
 
 			if predicted_age == int(age):
-				print "hey"
 				correct += 1
 			elif predicted_age == (int(age) - 5) or predicted_age == (int(age) + 5):
 				within_one += 1
 
-			print correct
-			print "(" + str(int(correct)) + "/" + str(int(total)) + ")"
+			# print correct
+			# print "(" + str(int(correct)) + "/" + str(int(total)) + ")"
+			# print "Predicted age: " + str(predicted_age)
 
 	accuracy = correct / total
 	accuracy_within_one = (correct + within_one) / total
@@ -289,9 +270,9 @@ if __name__ == '__main__':
 
 	# only needed to fill the file - comment out otherwise
 	# print "training..."
-	# read_and_train(uniword, biword, syllab_avg)
+	read_and_train(uniword, biword, syllab_avg)
 
-	# uniword, biword, syllab_avg = load_dictionaries_from_files()
+	uniword, biword, syllab_avg = load_dictionaries_from_files()
 
 	# if running or testing
 	if len(sys.argv) > 1 and sys.argv[1] == "test":
@@ -299,7 +280,10 @@ if __name__ == '__main__':
 			for line in file.readlines():
 				ages = ast.literal_eval(line)
 		# #this test tests using biword and uniword model
+		print "--- System ---"
 		test_system(ages, uniword, biword, syllab_avg)
+
+		print "\n--- Syllables ---"
 		#this test tests using syllables
 		test_syllables(ages, syllab_avg)
 	else:
