@@ -160,7 +160,7 @@ def estimate_age(tweets, uniword, biword, syllab_avg):
 			prev_word = word
 
 	probs_sorted = sorted(probabilities.items(), key=operator.itemgetter(1), reverse = True)
-	count = 1
+	# count = 1
 	# print "Your predicted age based on your tweets is:"
 
 	# for age_prob in probs_sorted:
@@ -195,8 +195,8 @@ def test_system(test_data, uniword, biword, syllab_avg):
 	accuracy = correct / total
 	accuracy_within_one = (correct + within_one) / total
 
-	# print "Accuracy: " + str(accuracy)
-	# print "Within one: " + str(accuracy_within_one)
+	print "Accuracy: " + str(accuracy)
+	print "Within one: " + str(accuracy_within_one)
 
 def test_syllables(test_data, syllab_avg):
 	total = 0.0
