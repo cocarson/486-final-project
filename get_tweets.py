@@ -109,7 +109,7 @@ def get_usernames(names):
 
 def get_tweets(username, tweets):
 	try:
-		results = api.request('statuses/user_timeline', {'screen_name': username, 'count': 300, 'include_rts': False})
+		results = api.request('statuses/user_timeline', {'screen_name': username, 'count': 160, 'include_rts': False})
 		for item in results:
 			tweets.append(item['text'])
 	except:
@@ -214,15 +214,15 @@ if __name__ == '__main__':
 			# place one out of every four users in testing set
 			if (counter % 4) == 0:
 				if norm_actor_age in testing_data:
-					testing_data[norm_actor_age][name] = tweets[:159]
+					testing_data[norm_actor_age][name] = tweets[:39]
 				else:
 					testing_data[norm_actor_age] = dict()
-					testing_data[norm_actor_age][name] = tweets[:159]
+					testing_data[norm_actor_age][name] = tweets[:39]
 			else:
 				if norm_actor_age in age_to_tweet_dict:
-					age_to_tweet_dict[norm_actor_age] = age_to_tweet_dict[norm_actor_age] + tweets
+					age_to_tweet_dict[norm_actor_age] = age_to_tweet_dict[norm_actor_age] + tweets[:159]
 				else:
-					age_to_tweet_dict[norm_actor_age] = tweets
+					age_to_tweet_dict[norm_actor_age] = tweets[:159]
 		counter = counter + 1
 
 	with codecs.open('testing_garbage', 'w') as output:
