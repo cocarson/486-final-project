@@ -5,6 +5,7 @@ Setup:
 
 
 Step 1: Obtain datasets
+	
 	Run:
 		python get_tweets.py
 
@@ -14,6 +15,7 @@ Step 1: Obtain datasets
 		
 
 Step 2: Test
+	
 	Run:
 		python system.py test
 
@@ -25,6 +27,7 @@ Step 2: Test
 
 
 Step 3: Demo
+	
 	Setup:
 		Uncomment lines 163 - 172
 	
