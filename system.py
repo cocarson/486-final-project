@@ -192,13 +192,11 @@ def test_system(test_data, uniword, biword, syllab_avg):
 			elif predicted_age == (int(age) - 5) or predicted_age == (int(age) + 5):
 				within_one += 1
 
-			# print "(" + str(int(correct)) + "/" + str(int(total)) + ")"
-
 	accuracy = correct / total
 	accuracy_within_one = (correct + within_one) / total
 
-	print "Accuracy: " + str(accuracy)
-	print "Within one: " + str(accuracy_within_one)
+	# print "Accuracy: " + str(accuracy)
+	# print "Within one: " + str(accuracy_within_one)
 
 def test_syllables(test_data, syllab_avg):
 	total = 0.0
@@ -208,7 +206,7 @@ def test_syllables(test_data, syllab_avg):
 	for age in test_data.keys():
 		for handle in test_data[age].keys():
 
-			# average syllable count for this test subject's tweets
+			#Average syllable count for this test subject's tweets
 			syll = train_system_syllables(test_data[age][handle])
 			total += 1
 
@@ -267,26 +265,26 @@ def run_system(uniword, biword, syllab_avg):
 
 if __name__ == '__main__':
 
-	# #initialize dictionaries with empty dictionaries for each age range
+	#Initialize dictionaries with empty dictionaries for each age range
 	uniword, biword, syllab_avg = create_dictionaries()
 
-	# only needed to fill the file - comment out otherwise
-	# print "training..."
+	#Only needed to fill the file - comment out otherwise
+	#Print "training..."
 	read_and_train(uniword, biword, syllab_avg)
 
 	uniword, biword, syllab_avg = load_dictionaries_from_files()
 
-	# if running or testing
+	#If running or testing
 	if len(sys.argv) > 1 and sys.argv[1] == "test":
 		with open("test_data") as file:
 			for line in file.readlines():
 				ages = ast.literal_eval(line)
-		# #this test tests using biword and uniword model
+		#This test tests using biword and uniword model
 		print "--- System ---"
 		test_system(ages, uniword, biword, syllab_avg)
 
 		print "\n--- Syllables ---"
-		#this test tests using syllables
+		#This test tests using syllables
 		test_syllables(ages, syllab_avg)
 	else:
 		run_system(uniword, biword, syllab_avg)
