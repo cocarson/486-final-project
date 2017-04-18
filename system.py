@@ -17,6 +17,7 @@ import operator
 
 from get_tweets import process_tweet
 
+#Twitter Application keys
 api = TwitterAPI('6hckfkSBDEUJRxPATcCtcsdOp',
 					'GduOLco0wL1pOTboeClVPmZe8PPXEYD0VKnmKWpb2of7UNTbrY',
 					'399687253-xb9c6wdOQMBU8K2Jk3utxDLuqC21qRLTajkV9iel',
@@ -50,6 +51,7 @@ def create_dictionaries():
 
 	return uniword, biword, syllab_avg
 
+#Changes age to smallest value of coinciding bucket
 def normalize_age(age):
 	age /= 5
 	age *= 5

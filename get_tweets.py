@@ -6,15 +6,18 @@ import re
 import codecs
 from datetime import date
 
+#Twitter Application keys
 api = TwitterAPI('6hckfkSBDEUJRxPATcCtcsdOp',
             		'GduOLco0wL1pOTboeClVPmZe8PPXEYD0VKnmKWpb2of7UNTbrY',
                     '399687253-xb9c6wdOQMBU8K2Jk3utxDLuqC21qRLTajkV9iel',
                     'bXdT9ejraFk6O9bNExA2sD71jgixMFby8nqzQwfsTLXKa')
 
+#Converts date of birth to age
 def calculate_age(born):
 	today = date.today()
 	return today.year - int(born[0]) - ((today.month, today.day) < (int(born[1]), int(born[2])))
 
+#Changes age to smallest value of coinciding bucket
 def normalize_age(age):
 	age /= 5
 	age *= 5
@@ -25,6 +28,9 @@ def normalize_age(age):
 
 	return age
 
+#Functionality to grab list of actors from IMDb: DID NOT USE
+#We decided to hardcode a list of names due to the fact that
+#too many API calls were being made to twitter because the actor list was too long
 def get_actor_names(filename):
 	with open(filename, 'r') as myfile:
 		data = myfile.read()
@@ -59,8 +65,12 @@ def get_actor_age(name):
 		response = urlopen(request)
 
 		results = response.read()
+
+		#Remove tags and replace with empty string
 		TAG_RE = re.compile(r'<[^>]+>')
 		request = TAG_RE.sub('', results)
+
+		#Parse out dates
 		matches = datefinder.find_dates(request)
 	except:
 		#print "get_actor_age error"
@@ -74,6 +84,7 @@ def get_actor_age(name):
 			birthdate = match
 		length = length + 1
 
+	#If a date was found, return date that was found (birthday)
 	if length > 0:
 		return birthdate
 	else:
@@ -87,15 +98,14 @@ def is_ascii(s):
 	except UnicodeDecodeError:
 		return False
 
+#Obtains twitter handles of each celebrity in our corpus
 def get_usernames(names):
 	usernames = []
-	update_names = []
-	index  = 0
-	for name in names:
-		index = index + 1
-		if index == 500:
-			print name
 
+	#Creating new names list, excluding celebrities that do not have Twitter accounts
+	update_names = []
+
+	for name in names:
 		try:
 			results = api.request('users/search', {'q': name, 'count': 1})
 			for item in results:
@@ -113,7 +123,7 @@ def get_tweets(username, tweets):
 		for item in results:
 			tweets.append(item['text'])
 	except:
-		print "get_tweets error"
+		#print "get_tweets error"
 		return False
 
 	return True
@@ -199,19 +209,22 @@ if __name__ == '__main__':
 	for name, username in zip(usernames[1], usernames[0]):
 		actor_age = get_actor_age(name)
 
+		#If Wikipedia had a malformed D.O.B.
 		if actor_age == -1:
 			continue
 		actor_age = str(actor_age).split()
 		birthdate = actor_age[0]
 		birthdate = birthdate.split('-')
-		actor_age = calculate_age(birthdate)
-		print actor_age
 
+		#Convert D.O.B. to age
+		actor_age = calculate_age(birthdate)
+
+		#Assign bucket
 		norm_actor_age = normalize_age(actor_age)
 
 		tweets = []
 		if get_tweets(username, tweets):
-			# place one out of every four users in testing set
+			#Place one out of every four users in testing set
 			if (counter % 4) == 0:
 				if norm_actor_age in testing_data:
 					testing_data[norm_actor_age][name] = tweets[:39]
