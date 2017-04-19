@@ -1,10 +1,9 @@
 # 486-final-project
 
-Setup:
-	
+## Setup:
+	pip install -r requirements.txt
 
-
-Step 1: Obtain datasets
+## Step 1: Obtain datasets
 	
 	Run:
 		python get_tweets.py
@@ -14,7 +13,7 @@ Step 1: Obtain datasets
 		test_data: Dictionary containing age that maps to a dictionary of celebrities that map to their tweets
 		
 
-Step 2: Test
+## Step 2: Test
 	
 	Run:
 		python system.py test
@@ -26,7 +25,7 @@ Step 2: Test
 		syllab_avg: Average syllable count for each bucket range
 
 
-Step 3: Demo
+## Step 3: Demo
 	
 	Setup:
 		Uncomment lines 163 - 172
